@@ -1,0 +1,13 @@
+# Project-wide Gradle settings.
+org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError
+android.useAndroidX=true
+android.nonTransitiveRClass=true
+
+# Maven Central Portal credentials (get from https://central.sonatype.com/)
+mavenCentralUsername=YOUR_USERNAME
+mavenCentralPassword=YOUR_PASSWORD
+
+# GPG Signing (for publishing to Maven Central)
+signing.keyId=YOUR_KEY_ID
+signing.password=YOUR_GPG_PASSWORD
+signing.secretKeyRingFile=/path/to/.gnupg/secring.gpg

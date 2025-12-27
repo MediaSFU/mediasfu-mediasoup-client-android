@@ -226,3 +226,29 @@ fabric.properties
 
 # VisualStudioCode files
 .vscode/
+
+# ==========================================
+# PRIVATE - DO NOT COMMIT
+# ==========================================
+
+# GPG/PGP private keys
+*.asc
+private-key*.asc
+secring.gpg
+
+# Maven Central / Publishing credentials
+# NOTE: gradle.properties contains sensitive credentials
+# Use gradle.properties.template instead and keep real one local
+gradle.properties
+
+# Bundle/release artifacts (too large for git)
+*.zip
+bundle/
+
+# Any keystore files
+*.jks
+*.keystore
+*.p12
+
+# GPG keyrings
+*.gpg

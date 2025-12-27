@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.library'
-    id 'signing'
-    id 'maven-publish'
+    id 'com.vanniktech.maven.publish'
 }
 
 // Source of webrtc.
@@ -10,20 +9,21 @@ def WEBRTC_INC_PATH = "${projectDir}/deps/webrtc/src"
 def WEBRTC_LIB_PATH = "${projectDir}/deps/webrtc/lib"
 
 android {
-    compileSdkVersion 31
+    namespace 'org.mediasoup.droid'
+    compileSdk 34
+
     ndkVersion '26.1.10909125'
 
     defaultConfig {
-        minSdkVersion 18
-        targetSdkVersion 31
-        versionCode 340
-        versionName '3.4.0'
+        minSdk 21
+        targetSdk 34
+        versionCode 100
+        versionName '1.0.0'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         externalNativeBuild {
             cmake {
-                // Passes optional arguments to CMake.
                 arguments "-DLIBWEBRTC_INCLUDE_PATH=" + WEBRTC_INC_PATH,
                         "-DLIBWEBRTC_BINARY_PATH=" + WEBRTC_LIB_PATH,
                         "-DMEDIASOUPCLIENT_BUILD_TESTS=false",
@@ -35,8 +35,6 @@ android {
         }
 
         ndk {
-            // Specifies the ABI configurations of your native
-            // libraries Gradle should build and package with your APK.
             abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }
     }
@@ -49,21 +47,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     externalNativeBuild {
         cmake {
-            // Provides a relative path to your CMake build script.
             path "CMakeLists.txt"
-        }
-    }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
         }
     }
 }
@@ -72,82 +62,46 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     api fileTree(dir: WEBRTC_LIB_PATH, include: ['libwebrtc.jar'])
 
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    testImplementation 'junit:junit:4.13'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
-def getReleaseRepositoryUrl() {
-    return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
-            : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-}
-
-def getSnapshotRepositoryUrl() {
-    return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
-            : "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-}
-
-def getRepositoryUsername() {
-    return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
-}
-
-def getRepositoryPassword() {
-    return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
-}
-
-afterEvaluate {
-publishing {
-    publications {
-        aar(MavenPublication) {
-            from components.release
-            pom {
-                name = POM_NAME
-                version = POM_VERSION
-                groupId = POM_GROUP
-                packaging = POM_PACKAGING
-                artifactId = POM_ARTIFACT_ID
-                description = POM_DESCRIPTION
-                url = POM_URL
-
-                scm {
-                    url = POM_SCM_URL
-                    connection = POM_SCM_CONNECTION
-                    developerConnection = POM_SCM_DEV_CONNECTION
-                }
-
-                licenses {
-                    license {
-                        name = POM_LICENCE_NAME
-                        url = POM_LICENCE_URL
-                        distribution = POM_LICENCE_DIST
-                    }
-                }
-
-                developers {
-                    developer {
-                        id = POM_DEVELOPER_ID
-                        name = POM_DEVELOPER_NAME
-                        email = POM_DEVELOPER_EMAIL
-                    }
-                }
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    
+    signAllPublications()
+    
+    coordinates("com.mediasfu", "mediasoup-client", "1.0.0")
+    
+    pom {
+        name = "mediasoup-client"
+        description = "MediaSFU fork of mediasoup android client with H264/PCMU/PCMA codec support and WebRTC M137"
+        inceptionYear = "2025"
+        url = "https://github.com/MediaSFU/mediasfu-mediasoup-client-android"
+        
+        licenses {
+            license {
+                name = "MIT License"
+                url = "https://opensource.org/licenses/MIT"
+                distribution = "repo"
             }
         }
-    }
-    repositories {
-        maven {
-            url = POM_VERSION.endsWith("SNAPSHOT") ? getSnapshotRepositoryUrl() : getReleaseRepositoryUrl()
-            credentials {
-                username = getRepositoryUsername()
-                password = getRepositoryPassword()
+        
+        developers {
+            developer {
+                id = "mediasfu"
+                name = "MediaSFU Team"
+                email = "info@mediasfu.com"
+                url = "https://mediasfu.com"
             }
         }
+        
+        scm {
+            url = "https://github.com/MediaSFU/mediasfu-mediasoup-client-android"
+            connection = "scm:git:git://github.com/MediaSFU/mediasfu-mediasoup-client-android.git"
+            developerConnection = "scm:git:ssh://git@github.com/MediaSFU/mediasfu-mediasoup-client-android.git"
+        }
     }
-}
-
-signing {
-    sign javaDocReleaseJar
-    sign sourceReleaseJar
-    sign publishing.publications.aar
-}
 }
