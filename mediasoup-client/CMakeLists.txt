@@ -11,6 +11,10 @@ set(mediasoup_client_so_VERSION_PATCH 8)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 16KB page size alignment for Android 15+ (Google Play requirement).
+# See: https://developer.android.com/guide/practices/page-sizes
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
+
 set(
 	SOURCE_DIR
 	${mediasoupclient_so_SOURCE_DIR}/src/main/jni/

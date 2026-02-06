@@ -73,7 +73,7 @@ mavenPublishing {
     
     signAllPublications()
     
-    coordinates("com.mediasfu", "mediasoup-client", "1.0.0")
+    coordinates("com.mediasfu", "mediasoup-client", "1.0.1")
     
     pom {
         name = "mediasoup-client"
