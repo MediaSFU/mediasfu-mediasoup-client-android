@@ -1,2 +1,8 @@
+* text=auto eol=lf
 webrtc.jar filter=lfs diff=lfs merge=lfs -text
 libwebrtc.a filter=lfs diff=lfs merge=lfs -text
+*.so binary
+*.jar binary
+*.aar binary
+*.a binary
+*.png binary
