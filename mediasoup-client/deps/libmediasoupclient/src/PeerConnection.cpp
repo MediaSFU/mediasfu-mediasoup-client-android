@@ -20,6 +20,24 @@
 
 using json = nlohmann::json;
 
+namespace
+{
+	webrtc::SdpType ToWebRtcSdpType(mediasoupclient::PeerConnection::SdpType type)
+	{
+		switch (type)
+		{
+			case mediasoupclient::PeerConnection::SdpType::OFFER:
+				return webrtc::SdpType::kOffer;
+			case mediasoupclient::PeerConnection::SdpType::PRANSWER:
+				return webrtc::SdpType::kPrAnswer;
+			case mediasoupclient::PeerConnection::SdpType::ANSWER:
+				return webrtc::SdpType::kAnswer;
+		}
+
+		return webrtc::SdpType::kOffer;
+	}
+}
+
 namespace mediasoupclient
 {
 	/* Static. */
@@ -92,9 +110,9 @@ namespace mediasoupclient
 		else
 		{
 			LOGI("  CREATING BUILTIN FACTORY (software decoders only!)");
-			this->networkThread   = rtc::Thread::CreateWithSocketServer();
-			this->signalingThread = rtc::Thread::Create();
-			this->workerThread    = rtc::Thread::Create();
+			this->networkThread   = webrtc::Thread::CreateWithSocketServer();
+			this->signalingThread = webrtc::Thread::Create();
+			this->workerThread    = webrtc::Thread::Create();
 
 			this->networkThread->SetName("network_thread", nullptr);
 			this->signalingThread->SetName("signaling_thread", nullptr);
@@ -122,8 +140,15 @@ namespace mediasoupclient
 		config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
 
 		// Create the webrtc::Peerconnection.
-		this->pc =
-		  this->peerConnectionFactory->CreatePeerConnection(config, nullptr, nullptr, privateListener);
+		auto result = this->peerConnectionFactory->CreatePeerConnectionOrError(
+		  config, webrtc::PeerConnectionDependencies(privateListener));
+
+		if (!result.ok())
+		{
+			MSC_THROW_ERROR("%s", std::string(result.error().message()).c_str());
+		}
+
+		this->pc = result.MoveValue();
 	}
 
 	void PeerConnection::Close()
@@ -153,7 +178,7 @@ namespace mediasoupclient
 
 		MSC_WARN(
 		  "webrtc::PeerConnection::SetConfiguration failed [%s:%s]",
-		  webrtc::ToString(error.type()),
+		  std::string(webrtc::ToString(error.type())).c_str(),
 		  error.message());
 
 		return false;
@@ -198,10 +223,9 @@ namespace mediasoupclient
 		rtc::scoped_refptr<SetLocalDescriptionObserver> observer(
 		  new rtc::RefCountedObject<SetLocalDescriptionObserver>());
 
-		const auto& typeStr = sdpType2String[type];
 		auto future         = observer->GetFuture();
 
-		sessionDescription.reset(webrtc::CreateSessionDescription(typeStr, sdp, &error));
+		sessionDescription = webrtc::CreateSessionDescription(ToWebRtcSdpType(type), sdp, &error);
 		if (sessionDescription == nullptr)
 		{
 			MSC_WARN(
@@ -228,10 +252,9 @@ namespace mediasoupclient
 		rtc::scoped_refptr<SetRemoteDescriptionObserver> observer(
 		  new rtc::RefCountedObject<SetRemoteDescriptionObserver>());
 
-		const auto& typeStr = sdpType2String[type];
 		auto future         = observer->GetFuture();
 
-		sessionDescription.reset(webrtc::CreateSessionDescription(typeStr, sdp, &error));
+		sessionDescription = webrtc::CreateSessionDescription(ToWebRtcSdpType(type), sdp, &error);
 		if (sessionDescription == nullptr)
 		{
 			MSC_WARN(
@@ -281,7 +304,7 @@ namespace mediasoupclient
 	}
 
 	rtc::scoped_refptr<webrtc::RtpTransceiverInterface> PeerConnection::AddTransceiver(
-	  cricket::MediaType mediaType)
+	  webrtc::MediaType mediaType)
 	{
 		MSC_TRACE();
 
@@ -636,8 +659,8 @@ namespace mediasoupclient
 	/**
 	 * Triggered when the ICE candidates have been removed.
 	 */
-	void PeerConnection::PrivateListener::OnIceCandidatesRemoved(
-	  const std::vector<cricket::Candidate>& /*candidates*/)
+	void PeerConnection::PrivateListener::OnIceCandidateRemoved(
+	  const webrtc::IceCandidate* /*candidate*/)
 	{
 		MSC_TRACE();
 	}

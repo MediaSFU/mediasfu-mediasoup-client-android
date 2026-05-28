@@ -14,7 +14,7 @@ configure_file (
 )
 
 # C++ standard requirements.
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Project options.
@@ -25,12 +25,14 @@ option(MEDIASOUPCLIENT_LOG_DEV     "Enable MSC_LOG_DEV (See Logger.hpp)" OFF)
 # Project configuration.
 set(LIBWEBRTC_INCLUDE_PATH "" CACHE STRING "libwebrtc include path")
 set(LIBWEBRTC_BINARY_PATH "" CACHE STRING "libwebrtc binary path")
+set(LIBWEBRTC_LIBRARY_PATH "" CACHE STRING "Exact libwebrtc library or framework binary path")
+option(LIBWEBRTC_SKIP_LINK "Skip direct libwebrtc linking" OFF)
 
 if(NOT LIBWEBRTC_INCLUDE_PATH)
 	message(FATAL_ERROR "LIBWEBRTC_INCLUDE_PATH not provided")
 endif()
 
-if(NOT LIBWEBRTC_BINARY_PATH)
+if(NOT LIBWEBRTC_BINARY_PATH AND NOT LIBWEBRTC_LIBRARY_PATH AND NOT LIBWEBRTC_SKIP_LINK)
 	message(FATAL_ERROR "LIBWEBRTC_BINARY_PATH not provided")
 endif()
 
@@ -40,6 +42,8 @@ message(STATUS "MEDIASOUPCLIENT_LOG_TRACE   : " ${MEDIASOUPCLIENT_LOG_TRACE})
 message(STATUS "MEDIASOUPCLIENT_LOG_DEV     : " ${MEDIASOUPCLIENT_LOG_DEV})
 message(STATUS "LIBWEBRTC_INCLUDE_PATH      : " ${LIBWEBRTC_INCLUDE_PATH})
 message(STATUS "LIBWEBRTC_BINARY_PATH       : " ${LIBWEBRTC_BINARY_PATH})
+message(STATUS "LIBWEBRTC_LIBRARY_PATH      : " ${LIBWEBRTC_LIBRARY_PATH})
+message(STATUS "LIBWEBRTC_SKIP_LINK         : " ${LIBWEBRTC_SKIP_LINK})
 message("")
 
 # GCC >= 4.9 is required due to std::regex use.
@@ -131,8 +135,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 if("${ANDROID_ABI}" STREQUAL "")
 	target_link_libraries(${PROJECT_NAME} PUBLIC
 		sdptransform
-		${LIBWEBRTC_BINARY_PATH}/libwebrtc${CMAKE_STATIC_LIBRARY_SUFFIX}
 	)
+
+	if(LIBWEBRTC_SKIP_LINK)
+		message(STATUS "Skipping direct libwebrtc link for ${PROJECT_NAME}")
+	elseif(LIBWEBRTC_LIBRARY_PATH)
+		target_link_libraries(${PROJECT_NAME} PUBLIC
+			${LIBWEBRTC_LIBRARY_PATH}
+		)
+	else()
+		target_link_libraries(${PROJECT_NAME} PUBLIC
+			${LIBWEBRTC_BINARY_PATH}/libwebrtc${CMAKE_STATIC_LIBRARY_SUFFIX}
+		)
+	endif()
 else()
 	# Add '-whole-archive' to keep symbols from peerconnection_jni.
 	# https://stackoverflow.com/a/5687860/2085408
@@ -151,6 +166,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 	$<$<PLATFORM_ID:Windows>:NOMINMAX>
 	$<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
 	$<$<PLATFORM_ID:Darwin>:WEBRTC_MAC>
+	$<$<PLATFORM_ID:iOS>:WEBRTC_MAC>
 )
 
 install(TARGETS mediasoupclient DESTINATION lib)

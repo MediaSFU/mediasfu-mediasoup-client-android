@@ -1,8 +1,11 @@
 #ifndef MSC_PEERCONNECTION_HPP
 #define MSC_PEERCONNECTION_HPP
 
+#include "WebRtcCompat.hpp"
 #include <json.hpp>
+#include <api/media_types.h>
 #include <api/peer_connection_interface.h> // webrtc::PeerConnectionInterface
+#include <rtc_base/thread.h>
 #include <future>                          // std::promise, std::future
 #include <memory>                          // std::unique_ptr
 
@@ -38,7 +41,7 @@ namespace mediasoupclient
 			void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState newState) override;
 			void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState newState) override;
 			void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
-			void OnIceCandidatesRemoved(const std::vector<cricket::Candidate>& candidates) override;
+			void OnIceCandidateRemoved(const webrtc::IceCandidate* candidate) override;
 			void OnIceConnectionReceivingChange(bool receiving) override;
 			void OnAddTrack(
 			  rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
@@ -135,7 +138,7 @@ namespace mediasoupclient
 		const std::string GetLocalDescription();
 		const std::string GetRemoteDescription();
 		std::vector<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> GetTransceivers() const;
-		rtc::scoped_refptr<webrtc::RtpTransceiverInterface> AddTransceiver(cricket::MediaType mediaType);
+		rtc::scoped_refptr<webrtc::RtpTransceiverInterface> AddTransceiver(webrtc::MediaType mediaType);
 		rtc::scoped_refptr<webrtc::RtpTransceiverInterface> AddTransceiver(
 		  rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track,
 		  webrtc::RtpTransceiverInit rtpTransceiverInit);
@@ -149,9 +152,9 @@ namespace mediasoupclient
 
 	private:
 		// Signaling and worker threads.
-		std::unique_ptr<rtc::Thread> networkThread;
-		std::unique_ptr<rtc::Thread> signalingThread;
-		std::unique_ptr<rtc::Thread> workerThread;
+		std::unique_ptr<webrtc::Thread> networkThread;
+		std::unique_ptr<webrtc::Thread> signalingThread;
+		std::unique_ptr<webrtc::Thread> workerThread;
 
 		// PeerConnection factory.
 		rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peerConnectionFactory;

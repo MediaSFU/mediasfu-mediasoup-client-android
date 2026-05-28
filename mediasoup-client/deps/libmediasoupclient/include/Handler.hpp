@@ -2,6 +2,7 @@
 #define MSC_HANDLER_HPP
 
 #include "PeerConnection.hpp"
+#include "WebRtcCompat.hpp"
 #include "sdp/RemoteSdp.hpp"
 #include <json.hpp>
 #include <api/media_stream_interface.h>    // webrtc::MediaStreamTrackInterface

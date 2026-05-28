@@ -1,6 +1,7 @@
 #ifndef MSC_DATACONSUMER_HPP
 #define MSC_DATACONSUMER_HPP
 
+#include "WebRtcCompat.hpp"
 #include <json.hpp>
 #include <api/data_channel_interface.h>
 #include <string>

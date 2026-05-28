@@ -1651,8 +1651,8 @@ static bool matchCodecs(json& aCodec, json& bCodec, bool strict, bool modify)
 			if (aPacketizationMode != bPacketizationMode)
 				return false;
 
-			cricket::CodecParameterMap aParameters;
-			cricket::CodecParameterMap bParameters;
+			webrtc::CodecParameterMap aParameters;
+			webrtc::CodecParameterMap bParameters;
 
 			aParameters["level-asymmetry-allowed"] = std::to_string(getH264LevelAssimetryAllowed(aCodec));
 			aParameters["packetization-mode"]      = std::to_string(aPacketizationMode);
@@ -1664,7 +1664,7 @@ static bool matchCodecs(json& aCodec, json& bCodec, bool strict, bool modify)
 			if (!webrtc::H264IsSameProfile(aParameters, bParameters))
 				return false;
 
-			cricket::CodecParameterMap newParameters;
+			webrtc::CodecParameterMap newParameters;
 
 			try
 			{

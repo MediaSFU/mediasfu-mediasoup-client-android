@@ -2,6 +2,7 @@
 #define MSC_DATAPRODUCER_HPP
 
 #include "Handler.hpp"
+#include "WebRtcCompat.hpp"
 #include <json.hpp>
 #include <api/data_channel_interface.h>
 #include <string>

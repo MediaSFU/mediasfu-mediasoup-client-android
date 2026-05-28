@@ -34,8 +34,8 @@ namespace mediasoupclient
 		std::unique_ptr<PeerConnection> pc(
 		  new PeerConnection(privateListener.get(), peerConnectionOptions));
 
-		(void)pc->AddTransceiver(cricket::MediaType::MEDIA_TYPE_AUDIO);
-		(void)pc->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO);
+		(void)pc->AddTransceiver(webrtc::MediaType::AUDIO);
+		(void)pc->AddTransceiver(webrtc::MediaType::VIDEO);
 
 		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
