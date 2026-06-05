@@ -3,8 +3,8 @@
 #include "mediasoupclient.hpp"
 #include "Logger.hpp"
 #include "version.hpp"
-#include <api/environment/deprecated_global_field_trials.h>
-#include <rtc_base/crypto_random.h>
+#include <system_wrappers/include/field_trial.h>
+#include <rtc_base/helpers.h>
 #include <rtc_base/ssl_adapter.h>
 #include <rtc_base/time_utils.h>
 #include <sstream>
@@ -17,17 +17,17 @@ namespace mediasoupclient
 
 		MSC_DEBUG("mediasoupclient v%s", Version().c_str());
 
-		webrtc::DeprecatedGlobalFieldTrials::Set("WebRTC-SupportVP9SVC/EnabledByFlag_3SL3TL/");
+		webrtc::field_trial::InitFieldTrialsFromString("WebRTC-SupportVP9SVC/EnabledByFlag_3SL3TL/");
 
-		webrtc::InitializeSSL();
-		webrtc::InitRandom(static_cast<int>(webrtc::Time()));
+		rtc::InitializeSSL();
+		rtc::InitRandom(static_cast<int>(rtc::Time32()));
 	}
 
 	void Cleanup() // NOLINT(readability-identifier-naming)
 	{
 		MSC_TRACE();
 
-		webrtc::CleanupSSL();
+		rtc::CleanupSSL();
 	}
 
 	std::string Version() // NOLINT(readability-identifier-naming)

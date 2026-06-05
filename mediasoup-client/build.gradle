@@ -18,7 +18,7 @@ android {
         minSdk 21
         targetSdk 34
         versionCode 100
-        versionName '1.0.0'
+        versionName '1.0.2'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -43,6 +43,12 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += 'META-INF/**'
         }
     }
 
@@ -73,7 +79,7 @@ mavenPublishing {
     
     signAllPublications()
     
-    coordinates("com.mediasfu", "mediasoup-client", "1.0.1")
+    coordinates("com.mediasfu", "mediasoup-client", "1.0.2")
     
     pom {
         name = "mediasoup-client"
@@ -103,5 +109,16 @@ mavenPublishing {
             connection = "scm:git:git://github.com/MediaSFU/mediasfu-mediasoup-client-android.git"
             developerConnection = "scm:git:ssh://git@github.com/MediaSFU/mediasfu-mediasoup-client-android.git"
         }
+    }
+}
+
+apply plugin: 'signing'
+
+signing {
+    def secretKeyFile = file("${project.rootDir}/private-key-one.asc")
+    if (secretKeyFile.exists()) {
+        def secretKey = secretKeyFile.text
+        def password = project.findProperty("signing.password") ?: ""
+        useInMemoryPgpKeys(secretKey, password)
     }
 }

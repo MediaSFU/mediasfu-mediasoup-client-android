@@ -304,7 +304,7 @@ namespace mediasoupclient
 	}
 
 	rtc::scoped_refptr<webrtc::RtpTransceiverInterface> PeerConnection::AddTransceiver(
-	  webrtc::MediaType mediaType)
+	  cricket::MediaType mediaType)
 	{
 		MSC_TRACE();
 

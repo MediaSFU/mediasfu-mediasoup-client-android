@@ -334,7 +334,7 @@ namespace mediasoupclient
 					this->mediaObject["ext"].push_back(
 						{
 							{ "uri",   ext["uri"] },
-							{ "value", ext["id"]  }
+							{ "value", (*localExtIt)["value"] }
 						});
 					// clang-format on
 				}

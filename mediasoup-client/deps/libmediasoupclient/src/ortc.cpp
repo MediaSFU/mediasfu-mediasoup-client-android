@@ -1,5 +1,6 @@
 #define MSC_CLASS "ortc"
 
+#include "WebRtcCompat.hpp"
 #include "ortc.hpp"
 #include "Logger.hpp"
 #include "MediaSoupClientErrors.hpp"
