@@ -77,7 +77,7 @@ rtc_include_legacy_audio_device=true
 
 ```groovy
 dependencies {
-    implementation 'com.mediasfu:mediasoup-client:1.0.0'
+    implementation 'com.mediasfu:mediasoup-client:1.0.2'
 }
 ```
 
@@ -95,7 +95,7 @@ dependencies {
 
 ## 🔄 Comparison with Original
 
-| Feature | Original (haiyangwu v3.4.0) | MediaSFU Fork (v1.0.0) |
+| Feature | Original (haiyangwu v3.4.0) | MediaSFU Fork (v1.0.2) |
 |---------|---------------------------|----------------------|
 | WebRTC Version | M114 | **M137** |
 | H.264 Codec | ❌ Not compiled | ✅ **Enabled** |
