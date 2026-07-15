@@ -13,8 +13,9 @@ configure_file (
 	"${PROJECT_SOURCE_DIR}/include/version.hpp"
 )
 
-# C++ standard requirements.
-set(CMAKE_CXX_STANDARD 20)
+# The bundled libwebrtc archives were built against Abseil's pre-C++17
+# optional implementation. Keep this target on the matching ABI.
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Project options.

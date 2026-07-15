@@ -328,6 +328,13 @@ public class MediasoupClientTest extends BaseTest {
       JSONObject audioConsumer2RemoteParameters =
           new JSONObject(Parameters.nativeGenConsumerRemoteParameters("audio/opus"));
 
+      // Exercise a heap-allocated MID. This catches an ABI mismatch between
+      // absl::optional<std::string> in libwebrtc and libmediasoupclient.
+      JSONObject audioRtpParameters =
+          new JSONObject(audioConsumerRemoteParameters.getString("rtpParameters"));
+      audioRtpParameters.put("mid", "consumer-mid-0123456789abcdef");
+      audioConsumerRemoteParameters.put("rtpParameters", audioRtpParameters.toString());
+
       {
         audioConsumer =
             recvTransport.consume(

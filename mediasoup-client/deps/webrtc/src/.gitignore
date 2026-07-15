@@ -47,7 +47,9 @@
 /mojo
 /out
 /testing
-/third_party
+/third_party/*
+!/third_party/abseil-cpp/
+!/third_party/abseil-cpp/**
 /tools
 /tools_webrtc/android/profiling/flamegraph
 /tools_webrtc/android/profiling/simpleperf

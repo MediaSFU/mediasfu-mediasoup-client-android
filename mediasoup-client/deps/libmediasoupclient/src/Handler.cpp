@@ -8,7 +8,12 @@
 #include "scalabilityMode.hpp"
 #include "sdptransform.hpp"
 #include "sdp/Utils.hpp"
+#include <absl/base/config.h>
 #include <cinttypes> // PRIu64, etc
+
+#if defined(ABSL_USES_STD_OPTIONAL)
+#error "libmediasoupclient must use the Abseil optional ABI used by the bundled libwebrtc archive"
+#endif
 
 using json = nlohmann::json;
 

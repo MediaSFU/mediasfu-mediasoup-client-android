@@ -18,7 +18,7 @@ android {
         minSdk 21
         targetSdk 34
         versionCode 100
-        versionName '1.0.2'
+        versionName '1.0.3'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -79,7 +79,7 @@ mavenPublishing {
     
     signAllPublications()
     
-    coordinates("com.mediasfu", "mediasoup-client", "1.0.2")
+    coordinates("com.mediasfu", "mediasoup-client", "1.0.3")
     
     pom {
         name = "mediasoup-client"
