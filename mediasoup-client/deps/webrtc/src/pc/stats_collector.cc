@@ -38,6 +38,7 @@
 #include "pc/channel_interface.h"
 #include "pc/data_channel_utils.h"
 #include "pc/rtp_receiver.h"
+#include "pc/rtp_receiver_proxy.h"
 #include "pc/rtp_transceiver.h"
 #include "pc/transport_stats.h"
 #include "rtc_base/checks.h"
@@ -1060,8 +1061,14 @@ void StatsCollector::ExtractBweInfo() {
 
 namespace {
 
+using RtpReceiverProxyList = std::vector<
+    rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>;
+
 class MediaChannelStatsGatherer {
  public:
+  explicit MediaChannelStatsGatherer(RtpReceiverProxyList receivers)
+      : receivers_(std::move(receivers)) {}
+
   virtual ~MediaChannelStatsGatherer() = default;
 
   virtual bool GetStatsOnWorkerThread() = 0;
@@ -1074,6 +1081,8 @@ class MediaChannelStatsGatherer {
   std::string transport_name;
   std::map<uint32_t, std::string> sender_track_id_by_ssrc;
   std::map<uint32_t, std::string> receiver_track_id_by_ssrc;
+
+  const RtpReceiverProxyList& receivers() const { return receivers_; }
 
  protected:
   template <typename ReceiverT, typename SenderT>
@@ -1089,13 +1098,18 @@ class MediaChannelStatsGatherer {
     ExtractStatsFromList(sender_data, transport_id, collector,
                          StatsReport::kSend, sender_track_id_by_ssrc);
   }
+
+ private:
+  const RtpReceiverProxyList receivers_;
 };
 
 class VoiceMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
  public:
   VoiceMediaChannelStatsGatherer(
-      cricket::VoiceMediaChannel* voice_media_channel)
-      : voice_media_channel_(voice_media_channel) {
+      cricket::VoiceMediaChannel* voice_media_channel,
+      RtpReceiverProxyList receivers)
+      : MediaChannelStatsGatherer(std::move(receivers)),
+        voice_media_channel_(voice_media_channel) {
     RTC_DCHECK(voice_media_channel_);
   }
 
@@ -1127,8 +1141,10 @@ class VoiceMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
 class VideoMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
  public:
   VideoMediaChannelStatsGatherer(
-      cricket::VideoMediaChannel* video_media_channel)
-      : video_media_channel_(video_media_channel) {
+      cricket::VideoMediaChannel* video_media_channel,
+      RtpReceiverProxyList receivers)
+      : MediaChannelStatsGatherer(std::move(receivers)),
+        video_media_channel_(video_media_channel) {
     RTC_DCHECK(video_media_channel_);
   }
 
@@ -1149,15 +1165,18 @@ class VideoMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
 };
 
 std::unique_ptr<MediaChannelStatsGatherer> CreateMediaChannelStatsGatherer(
-    cricket::MediaChannel* channel) {
+    cricket::MediaChannel* channel,
+    RtpReceiverProxyList receivers) {
   RTC_DCHECK(channel);
   if (channel->media_type() == cricket::MEDIA_TYPE_AUDIO) {
     return std::make_unique<VoiceMediaChannelStatsGatherer>(
-        static_cast<cricket::VoiceMediaChannel*>(channel));
+        static_cast<cricket::VoiceMediaChannel*>(channel),
+        std::move(receivers));
   } else {
     RTC_DCHECK_EQ(channel->media_type(), cricket::MEDIA_TYPE_VIDEO);
     return std::make_unique<VideoMediaChannelStatsGatherer>(
-        static_cast<cricket::VideoMediaChannel*>(channel));
+        static_cast<cricket::VideoMediaChannel*>(channel),
+        std::move(receivers));
   }
 }
 
@@ -1178,7 +1197,8 @@ void StatsCollector::ExtractMediaInfo(
         continue;
       }
       std::unique_ptr<MediaChannelStatsGatherer> gatherer =
-          CreateMediaChannelStatsGatherer(channel->media_channel());
+          CreateMediaChannelStatsGatherer(
+              channel->media_channel(), transceiver->internal()->receivers());
       gatherer->mid = channel->content_name();
       gatherer->transport_name = transport_names_by_mid.at(gatherer->mid);
 
@@ -1200,17 +1220,14 @@ void StatsCollector::ExtractMediaInfo(
   pc_->worker_thread()->Invoke<void>(RTC_FROM_HERE, [&] {
     rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
     // Populate `receiver_track_id_by_ssrc` for the gatherers.
-    int i = 0;
-    for (const auto& transceiver : transceivers) {
-      cricket::ChannelInterface* channel = transceiver->internal()->channel();
-      if (!channel)
-        continue;
-      MediaChannelStatsGatherer* gatherer = gatherers[i++].get();
-      RTC_DCHECK_EQ(gatherer->mid, channel->content_name());
-
-      for (const auto& receiver : transceiver->internal()->receivers()) {
+    for (const auto& gatherer : gatherers) {
+      for (const auto& receiver : gatherer->receivers()) {
+        auto track = receiver->track();
+        if (!track) {
+          continue;
+        }
         gatherer->receiver_track_id_by_ssrc.insert(std::make_pair(
-            receiver->internal()->ssrc(), receiver->track()->id()));
+            receiver->internal()->ssrc(), track->id()));
       }
     }
 

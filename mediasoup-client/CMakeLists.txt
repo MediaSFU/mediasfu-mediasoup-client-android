@@ -44,6 +44,51 @@ list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/deps/libmediasoupclient/test/src/
 # Create target.
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
+# WebRTC M137's legacy StatsCollector crosses from the signaling thread to the
+# worker thread and used to re-read the live transceiver receiver list there.
+# Replace only that archive member with the vendored source backport, which
+# snapshots receiver proxies before crossing threads.
+if(ANDROID)
+	set(WEBRTC_ORIGINAL_ARCHIVE
+		"${LIBWEBRTC_BINARY_PATH}/${ANDROID_ABI}/libwebrtc${CMAKE_STATIC_LIBRARY_SUFFIX}")
+	set(WEBRTC_PATCHED_ARCHIVE
+		"${CMAKE_CURRENT_BINARY_DIR}/libwebrtc-without-stats-collector${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+	add_custom_command(
+		OUTPUT "${WEBRTC_PATCHED_ARCHIVE}"
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+			"${WEBRTC_ORIGINAL_ARCHIVE}" "${WEBRTC_PATCHED_ARCHIVE}"
+		COMMAND "${CMAKE_AR}" d "${WEBRTC_PATCHED_ARCHIVE}" stats_collector.o
+		DEPENDS "${WEBRTC_ORIGINAL_ARCHIVE}"
+		COMMENT "Removing the vulnerable WebRTC legacy stats collector object"
+		VERBATIM
+	)
+	add_custom_target(webrtc_archive_without_stats_collector
+		DEPENDS "${WEBRTC_PATCHED_ARCHIVE}")
+
+	add_library(webrtc_stats_collector_patch OBJECT
+		"${PROJECT_SOURCE_DIR}/deps/webrtc/src/pc/stats_collector.cc")
+	set_target_properties(webrtc_stats_collector_patch PROPERTIES
+		CXX_STANDARD 14
+		CXX_STANDARD_REQUIRED ON
+		POSITION_INDEPENDENT_CODE ON
+	)
+	target_compile_definitions(webrtc_stats_collector_patch PRIVATE
+		WEBRTC_ANDROID
+		WEBRTC_POSIX
+	)
+	target_include_directories(webrtc_stats_collector_patch SYSTEM PRIVATE
+		"${LIBWEBRTC_INCLUDE_PATH}"
+		"${LIBWEBRTC_INCLUDE_PATH}/third_party/abseil-cpp"
+	)
+	target_sources(${PROJECT_NAME} PRIVATE
+		$<TARGET_OBJECTS:webrtc_stats_collector_patch>)
+	add_dependencies(${PROJECT_NAME} webrtc_archive_without_stats_collector)
+
+	set(LIBWEBRTC_LIBRARY_PATH "${WEBRTC_PATCHED_ARCHIVE}"
+		CACHE FILEPATH "Patched Android libwebrtc archive" FORCE)
+endif()
+
 if(${MEDIASOUPCLIENT_LOG_TRACE})
 	target_compile_definitions(${PROJECT_NAME}
 		PRIVATE MSC_LOG_TRACE=1
