@@ -52,6 +52,13 @@ static jlong JNI_Producer_GetTrack(JNIEnv* env, jlong j_producer)
 	MSC_TRACE();
 
 	auto result = reinterpret_cast<OwnedProducer*>(j_producer)->producer()->GetTrack();
+
+	// MediaStreamTrack.createMediaStreamTrack() gives the Java object ownership
+	// of one native reference, which it releases from MediaStreamTrack.dispose().
+	// Keep WebRTC's sender-owned reference independent from the Java wrapper.
+	if (result)
+		result->AddRef();
+
 	return NativeToJavaPointer(result);
 }
 
