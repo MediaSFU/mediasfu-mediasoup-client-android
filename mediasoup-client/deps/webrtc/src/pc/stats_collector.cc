@@ -1084,13 +1084,8 @@ RtpReceiverStatsSnapshotList CreateRtpReceiverStatsSnapshot(
       continue;
     }
 
-    auto track = receiver->track();
-    if (!track) {
-      continue;
-    }
-
     snapshot.push_back(
-        {std::move(receiver_internal), track->id()});
+        {receiver_internal, receiver_internal->id()});
   }
 
   return snapshot;
