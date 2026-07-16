@@ -1064,10 +1064,43 @@ namespace {
 using RtpReceiverProxyList = std::vector<
     rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>;
 
+struct RtpReceiverStatsSnapshot {
+  rtc::scoped_refptr<RtpReceiverInternal> receiver_internal;
+  std::string track_id;
+};
+
+using RtpReceiverStatsSnapshotList =
+    std::vector<RtpReceiverStatsSnapshot>;
+
+RtpReceiverStatsSnapshotList CreateRtpReceiverStatsSnapshot(
+    const RtpReceiverProxyList& receivers) {
+  RtpReceiverStatsSnapshotList snapshot;
+  snapshot.reserve(receivers.size());
+
+  for (const auto& receiver : receivers) {
+    rtc::scoped_refptr<RtpReceiverInternal> receiver_internal(
+        receiver->internal());
+    if (!receiver_internal) {
+      continue;
+    }
+
+    auto track = receiver->track();
+    if (!track) {
+      continue;
+    }
+
+    snapshot.push_back(
+        {std::move(receiver_internal), track->id()});
+  }
+
+  return snapshot;
+}
+
 class MediaChannelStatsGatherer {
  public:
-  explicit MediaChannelStatsGatherer(RtpReceiverProxyList receivers)
-      : receivers_(std::move(receivers)) {}
+  explicit MediaChannelStatsGatherer(
+      RtpReceiverStatsSnapshotList receiver_stats)
+      : receiver_stats_(std::move(receiver_stats)) {}
 
   virtual ~MediaChannelStatsGatherer() = default;
 
@@ -1082,7 +1115,9 @@ class MediaChannelStatsGatherer {
   std::map<uint32_t, std::string> sender_track_id_by_ssrc;
   std::map<uint32_t, std::string> receiver_track_id_by_ssrc;
 
-  const RtpReceiverProxyList& receivers() const { return receivers_; }
+  const RtpReceiverStatsSnapshotList& receiver_stats() const {
+    return receiver_stats_;
+  }
 
  protected:
   template <typename ReceiverT, typename SenderT>
@@ -1100,15 +1135,15 @@ class MediaChannelStatsGatherer {
   }
 
  private:
-  const RtpReceiverProxyList receivers_;
+  const RtpReceiverStatsSnapshotList receiver_stats_;
 };
 
 class VoiceMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
  public:
   VoiceMediaChannelStatsGatherer(
       cricket::VoiceMediaChannel* voice_media_channel,
-      RtpReceiverProxyList receivers)
-      : MediaChannelStatsGatherer(std::move(receivers)),
+      RtpReceiverStatsSnapshotList receiver_stats)
+      : MediaChannelStatsGatherer(std::move(receiver_stats)),
         voice_media_channel_(voice_media_channel) {
     RTC_DCHECK(voice_media_channel_);
   }
@@ -1142,8 +1177,8 @@ class VideoMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
  public:
   VideoMediaChannelStatsGatherer(
       cricket::VideoMediaChannel* video_media_channel,
-      RtpReceiverProxyList receivers)
-      : MediaChannelStatsGatherer(std::move(receivers)),
+      RtpReceiverStatsSnapshotList receiver_stats)
+      : MediaChannelStatsGatherer(std::move(receiver_stats)),
         video_media_channel_(video_media_channel) {
     RTC_DCHECK(video_media_channel_);
   }
@@ -1166,17 +1201,17 @@ class VideoMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
 
 std::unique_ptr<MediaChannelStatsGatherer> CreateMediaChannelStatsGatherer(
     cricket::MediaChannel* channel,
-    RtpReceiverProxyList receivers) {
+    RtpReceiverStatsSnapshotList receiver_stats) {
   RTC_DCHECK(channel);
   if (channel->media_type() == cricket::MEDIA_TYPE_AUDIO) {
     return std::make_unique<VoiceMediaChannelStatsGatherer>(
         static_cast<cricket::VoiceMediaChannel*>(channel),
-        std::move(receivers));
+        std::move(receiver_stats));
   } else {
     RTC_DCHECK_EQ(channel->media_type(), cricket::MEDIA_TYPE_VIDEO);
     return std::make_unique<VideoMediaChannelStatsGatherer>(
         static_cast<cricket::VideoMediaChannel*>(channel),
-        std::move(receivers));
+        std::move(receiver_stats));
   }
 }
 
@@ -1198,7 +1233,9 @@ void StatsCollector::ExtractMediaInfo(
       }
       std::unique_ptr<MediaChannelStatsGatherer> gatherer =
           CreateMediaChannelStatsGatherer(
-              channel->media_channel(), transceiver->internal()->receivers());
+              channel->media_channel(),
+              CreateRtpReceiverStatsSnapshot(
+                  transceiver->internal()->receivers()));
       gatherer->mid = channel->content_name();
       gatherer->transport_name = transport_names_by_mid.at(gatherer->mid);
 
@@ -1221,13 +1258,9 @@ void StatsCollector::ExtractMediaInfo(
     rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
     // Populate `receiver_track_id_by_ssrc` for the gatherers.
     for (const auto& gatherer : gatherers) {
-      for (const auto& receiver : gatherer->receivers()) {
-        auto track = receiver->track();
-        if (!track) {
-          continue;
-        }
+      for (const auto& receiver_stats : gatherer->receiver_stats()) {
         gatherer->receiver_track_id_by_ssrc.insert(std::make_pair(
-            receiver->internal()->ssrc(), track->id()));
+            receiver_stats.receiver_internal->ssrc(), receiver_stats.track_id));
       }
     }
 
