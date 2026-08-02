@@ -11,6 +11,33 @@ buildscript {
     }
 }
 
+def versionFile = file('version.properties')
+if (!versionFile.exists()) {
+    throw new GradleException("Missing ${versionFile}. Define VERSION_NAME before building.")
+}
+
+def versionProperties = new Properties()
+versionFile.withInputStream { versionProperties.load(it) }
+
+def libraryVersion = versionProperties.getProperty('VERSION_NAME')?.trim()
+if (!libraryVersion) {
+    throw new GradleException('VERSION_NAME must be set in version.properties')
+}
+
+ext.libraryVersion = libraryVersion
+
+def readmeFile = file('README.md')
+def readmeInstallationPattern = ~/(?s)<!-- MEDIASOUP_CLIENT_INSTALLATION:START -->.*?<!-- MEDIASOUP_CLIENT_INSTALLATION:END -->/
+def readmeInstallationBlock = { version ->
+    """<!-- MEDIASOUP_CLIENT_INSTALLATION:START -->
+```groovy
+dependencies {
+    implementation 'com.mediasfu:mediasoup-client:${version}'
+}
+```
+<!-- MEDIASOUP_CLIENT_INSTALLATION:END -->"""
+}
+
 allprojects {
     repositories {
         google()
@@ -20,4 +47,47 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+tasks.register('syncReadmeVersion') {
+    group = 'documentation'
+    description = 'Updates the README installation dependency from version.properties.'
+
+    inputs.property('libraryVersion', libraryVersion)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def readme = readmeFile.getText('UTF-8')
+        if (!readmeInstallationPattern.matcher(readme).find()) {
+            throw new GradleException('README installation markers are missing')
+        }
+
+        def newline = readme.contains('\r\n') ? '\r\n' : '\n'
+        def replacement = readmeInstallationBlock(libraryVersion).replace('\n', newline)
+        def updated = readme.replaceFirst(
+                readmeInstallationPattern,
+                java.util.regex.Matcher.quoteReplacement(replacement))
+
+        readmeFile.setText(updated, 'UTF-8')
+        logger.lifecycle("README installation version synchronized to ${libraryVersion}")
+    }
+}
+
+tasks.register('checkReadmeVersion') {
+    group = 'verification'
+    description = 'Verifies that the README installation dependency matches version.properties.'
+
+    inputs.property('libraryVersion', libraryVersion)
+    inputs.file(readmeFile)
+
+    doLast {
+        def normalizedReadme = readmeFile.getText('UTF-8').replace('\r\n', '\n')
+        def expectedBlock = readmeInstallationBlock(libraryVersion)
+
+        if (!normalizedReadme.contains(expectedBlock)) {
+            throw new GradleException(
+                    "README dependency does not match version ${libraryVersion}. " +
+                            'Run ./gradlew syncReadmeVersion.')
+        }
+    }
 }

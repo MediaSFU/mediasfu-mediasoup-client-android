@@ -75,11 +75,15 @@ rtc_include_legacy_audio_device=true
 
 ### Gradle (Maven Central)
 
+<!-- MEDIASOUP_CLIENT_INSTALLATION:START -->
 ```groovy
 dependencies {
-    implementation 'com.mediasfu:mediasoup-client:1.0.0'
+    implementation 'com.mediasfu:mediasoup-client:1.0.7'
 }
 ```
+<!-- MEDIASOUP_CLIENT_INSTALLATION:END -->
+
+The dependency version above is sourced from `version.properties`. Maintainers can update it with `./gradlew syncReadmeVersion`; Maven Central publication verifies that this snippet is current.
 
 ### Manual AAR
 
@@ -95,7 +99,7 @@ dependencies {
 
 ## 🔄 Comparison with Original
 
-| Feature | Original (haiyangwu v3.4.0) | MediaSFU Fork (v1.0.0) |
+| Feature | Original (haiyangwu v3.4.0) | MediaSFU Fork |
 |---------|---------------------------|----------------------|
 | WebRTC Version | M114 | **M137** |
 | H.264 Codec | ❌ Not compiled | ✅ **Enabled** |

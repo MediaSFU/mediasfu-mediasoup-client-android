@@ -7,6 +7,7 @@ plugins {
 def WEBRTC_INC_PATH = "${projectDir}/deps/webrtc/src"
 // Precompiled static libs and jar for webrtc android.
 def WEBRTC_LIB_PATH = "${projectDir}/deps/webrtc/lib"
+def LIBRARY_VERSION = rootProject.ext.libraryVersion
 
 android {
     namespace 'org.mediasoup.droid'
@@ -18,7 +19,7 @@ android {
         minSdk 21
         targetSdk 34
         versionCode 100
-        versionName '1.0.7'
+        versionName LIBRARY_VERSION
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -79,7 +80,7 @@ mavenPublishing {
     
     signAllPublications()
     
-    coordinates("com.mediasfu", "mediasoup-client", "1.0.7")
+    coordinates("com.mediasfu", "mediasoup-client", LIBRARY_VERSION)
     
     pom {
         name = "mediasoup-client"
@@ -109,6 +110,17 @@ mavenPublishing {
             connection = "scm:git:git://github.com/MediaSFU/mediasfu-mediasoup-client-android.git"
             developerConnection = "scm:git:ssh://git@github.com/MediaSFU/mediasfu-mediasoup-client-android.git"
         }
+    }
+}
+
+tasks.configureEach {
+    if (name in [
+            'publishToMavenCentral',
+            'publishAndReleaseToMavenCentral',
+            'publishAllPublicationsToMavenCentralRepository',
+            'publishMavenPublicationToMavenCentralRepository'
+    ]) {
+        dependsOn(rootProject.tasks.named('checkReadmeVersion'))
     }
 }
 
