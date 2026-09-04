@@ -22,6 +22,23 @@ TEST_CASE("Sdp::Utils", "[Sdp][Utils]")
 		}
 	}
 
+	SECTION("extractRtpCapabilities rejects malformed SDP objects")
+	{
+		REQUIRE_THROWS_WITH(
+		  mediasoupclient::Sdp::Utils::extractRtpCapabilities(1),
+		  "generated SDP must be a JSON object");
+		REQUIRE_THROWS_WITH(
+		  mediasoupclient::Sdp::Utils::extractRtpCapabilities(json::object()),
+		  "generated SDP media must be an array");
+		REQUIRE_THROWS_WITH(
+		  mediasoupclient::Sdp::Utils::extractRtpCapabilities({ { "media", { 1 } } }),
+		  "generated SDP media entry must be an object");
+		REQUIRE_THROWS_WITH(
+		  mediasoupclient::Sdp::Utils::extractRtpCapabilities(
+		    { { "media", { { { "type", "audio" }, { "rtp", { 1 } } } } } }),
+		  "generated SDP RTP entry must be an object");
+	}
+
 	SECTION("extractDtlsParameters")
 	{
 		auto sdp            = helpers::readFile("test/data/jssip.sdp");

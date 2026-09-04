@@ -21,6 +21,17 @@ namespace mediasoupclient
 			{
 				MSC_TRACE();
 
+				// Offers created by an externally supplied WebRTC factory must still
+				// be valid sdptransform objects.  Validate the shape before indexing
+				// fields so malformed/empty offers become a Java exception instead of
+				// an opaque nlohmann::json operator[] failure (or native crash).
+				if (!sdpObject.is_object())
+					MSC_THROW_TYPE_ERROR("generated SDP must be a JSON object");
+
+				auto mediaIt = sdpObject.find("media");
+				if (mediaIt == sdpObject.end() || !mediaIt->is_array())
+					MSC_THROW_TYPE_ERROR("generated SDP media must be an array");
+
 				// Map of RtpCodecParameters indexed by payload type.
 				std::map<uint8_t, json> codecsMap;
 
@@ -31,8 +42,15 @@ namespace mediasoupclient
 				bool gotAudio = false;
 				bool gotVideo = false;
 
-				for (const auto& m : sdpObject["media"])
+				for (const auto& m : *mediaIt)
 				{
+					if (!m.is_object())
+						MSC_THROW_TYPE_ERROR("generated SDP media entry must be an object");
+
+					auto typeIt = m.find("type");
+					if (typeIt == m.end() || !typeIt->is_string())
+						MSC_THROW_TYPE_ERROR("generated SDP media entry is missing type");
+
 					auto kind = m["type"].get<std::string>();
 
 					if (kind == "audio")
@@ -55,8 +73,21 @@ namespace mediasoupclient
 					}
 
 					// Get codecs.
-					for (const auto& rtp : m["rtp"])
+					auto rtpIt = m.find("rtp");
+					if (rtpIt == m.end() || !rtpIt->is_array())
+						MSC_THROW_TYPE_ERROR("generated SDP media entry is missing rtp array");
+
+					for (const auto& rtp : *rtpIt)
 					{
+						if (!rtp.is_object())
+							MSC_THROW_TYPE_ERROR("generated SDP RTP entry must be an object");
+						if (!rtp.contains("codec") || !rtp["codec"].is_string())
+							MSC_THROW_TYPE_ERROR("generated SDP RTP entry is missing codec");
+						if (!rtp.contains("payload") || !rtp["payload"].is_number_integer())
+							MSC_THROW_TYPE_ERROR("generated SDP RTP entry has invalid payload");
+						if (!rtp.contains("rate") || !rtp["rate"].is_number_integer())
+							MSC_THROW_TYPE_ERROR("generated SDP RTP entry has invalid rate");
+
 						std::string mimeType(kind);
 						mimeType.append("/").append(rtp["codec"].get<std::string>());
 
@@ -86,8 +117,19 @@ namespace mediasoupclient
 					}
 
 					// Get codec parameters.
-					for (const auto& fmtp : m["fmtp"])
+					auto fmtpIt = m.find("fmtp");
+					if (fmtpIt != m.end() && !fmtpIt->is_array())
+						MSC_THROW_TYPE_ERROR("generated SDP fmtp must be an array");
+
+					for (const auto& fmtp : (fmtpIt != m.end() ? *fmtpIt : json::array()))
 					{
+						if (!fmtp.is_object())
+							MSC_THROW_TYPE_ERROR("generated SDP fmtp entry must be an object");
+						if (!fmtp.contains("config") || !fmtp["config"].is_string())
+							MSC_THROW_TYPE_ERROR("generated SDP fmtp entry has invalid config");
+						if (!fmtp.contains("payload") || !fmtp["payload"].is_number_integer())
+							MSC_THROW_TYPE_ERROR("generated SDP fmtp entry has invalid payload");
+
 						auto parameters    = sdptransform::parseParams(fmtp["config"]);
 						auto jsonPayloadIt = codecsMap.find(fmtp["payload"]);
 
@@ -108,8 +150,19 @@ namespace mediasoupclient
 					}
 
 					// Get RTCP feedback for each codec.
-					for (const auto& fb : m["rtcpFb"])
+					auto rtcpFbIt = m.find("rtcpFb");
+					if (rtcpFbIt != m.end() && !rtcpFbIt->is_array())
+						MSC_THROW_TYPE_ERROR("generated SDP rtcpFb must be an array");
+
+					for (const auto& fb : (rtcpFbIt != m.end() ? *rtcpFbIt : json::array()))
 					{
+						if (!fb.is_object())
+							MSC_THROW_TYPE_ERROR("generated SDP rtcpFb entry must be an object");
+						if (!fb.contains("payload") || !fb["payload"].is_string())
+							MSC_THROW_TYPE_ERROR("generated SDP rtcpFb entry has invalid payload");
+						if (!fb.contains("type") || !fb["type"].is_string())
+							MSC_THROW_TYPE_ERROR("generated SDP rtcpFb entry is missing type");
+
 						auto jsonCodecIt = codecsMap.find(std::stoi(fb["payload"].get<std::string>()));
 
 						if (jsonCodecIt == codecsMap.end())
@@ -133,8 +186,18 @@ namespace mediasoupclient
 					}
 
 					// Get RTP header extensions.
-					for (const auto& ext : m["ext"])
+					auto extIt = m.find("ext");
+					if (extIt != m.end() && !extIt->is_array())
+						MSC_THROW_TYPE_ERROR("generated SDP ext must be an array");
+
+					for (const auto& ext : (extIt != m.end() ? *extIt : json::array()))
 					{
+						if (!ext.is_object())
+							MSC_THROW_TYPE_ERROR("generated SDP extension entry must be an object");
+						if (!ext.contains("uri") || !ext["uri"].is_string())
+							MSC_THROW_TYPE_ERROR("generated SDP extension entry is missing uri");
+						if (!ext.contains("value") || !ext["value"].is_number_integer())
+							MSC_THROW_TYPE_ERROR("generated SDP extension entry has invalid value");
 						// clang-format off
 						json headerExtension =
 						{

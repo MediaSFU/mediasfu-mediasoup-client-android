@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mediasoup.droid.data.Parameters;
+import org.webrtc.PeerConnectionFactory;
 
 @RunWith(AndroidJUnit4.class)
 public class DeviceTest extends BaseTest {
@@ -132,5 +133,20 @@ public class DeviceTest extends BaseTest {
               listener, mId, mIceParameters, mIceCandidates, mDtlsParameters, mSctpParameters);
       transport.dispose();
     }
+  }
+
+  @Test
+  public void testLoadWithExternalPeerConnectionFactory() throws MediasoupException {
+    String routerRtpCapabilities = Parameters.nativeGenRouterRtpCapabilities();
+    PeerConnectionFactory factory = PeerConnectionUtils.getPeerConnectionFactory(mContext);
+    PeerConnection.Options options = new PeerConnection.Options();
+    options.setFactory(factory);
+
+    mDevice.load(routerRtpCapabilities, options);
+
+    assertTrue(mDevice.isLoaded());
+    assertFalse(TextUtils.isEmpty(mDevice.getRtpCapabilities()));
+    assertTrue(mDevice.canProduce("audio"));
+    assertTrue(mDevice.canProduce("video"));
   }
 }

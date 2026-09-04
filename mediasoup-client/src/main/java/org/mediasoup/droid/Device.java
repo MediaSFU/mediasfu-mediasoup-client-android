@@ -33,9 +33,7 @@ public class Device {
         mNativeDevice,
         routerRtpCapabilities,
         (peerConnectionOptions != null ? peerConnectionOptions.mRTCConfig : null),
-        (peerConnectionOptions != null && peerConnectionOptions.mFactory != null
-            ? peerConnectionOptions.mFactory.getNativePeerConnectionFactory()
-            : 0L));
+        (peerConnectionOptions != null ? peerConnectionOptions.getNativeFactory() : 0L));
   }
 
   /**
@@ -169,9 +167,7 @@ public class Device {
         dtlsParameters,
         sctpParameters,
         (options != null ? options.mRTCConfig : null),
-        (options != null && options.mFactory != null
-            ? options.mFactory.getNativePeerConnectionFactory()
-            : 0L),
+        (options != null ? options.getNativeFactory() : 0L),
         appData);
   }
 
@@ -260,9 +256,7 @@ public class Device {
         dtlsParameters,
         sctpParameters,
         (options != null ? options.mRTCConfig : null),
-        (options != null && options.mFactory != null
-            ? options.mFactory.getNativePeerConnectionFactory()
-            : 0L),
+        (options != null ? options.getNativeFactory() : 0L),
         appData);
   }
 

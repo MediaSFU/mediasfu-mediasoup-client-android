@@ -46,6 +46,9 @@ namespace mediasoupclient
 
 		// May throw.
 		auto offer                 = pc->CreateOffer(options);
+		if (offer.empty())
+			MSC_THROW_INVALID_STATE_ERROR("WebRTC factory generated an empty SDP offer");
+
 		auto sdpObject             = sdptransform::parse(offer);
 		auto nativeRtpCapabilities = Sdp::Utils::extractRtpCapabilities(sdpObject);
 

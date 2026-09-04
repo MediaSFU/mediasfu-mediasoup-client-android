@@ -30,8 +30,24 @@ public class PeerConnection {
       mRTCConfig = RTCConfig;
     }
 
+    /**
+     * Uses a caller-owned WebRTC factory. The factory must come from the WebRTC artifact packaged
+     * with this library and must remain alive until every Device transport using it is disposed.
+     */
     public void setFactory(PeerConnectionFactory factory) {
       mFactory = factory;
+    }
+
+    long getNativeFactory() {
+      if (mFactory == null) {
+        return 0L;
+      }
+
+      long nativeFactory = mFactory.getNativePeerConnectionFactory();
+      if (nativeFactory == 0L) {
+        throw new IllegalStateException("PeerConnectionFactory has been disposed");
+      }
+      return nativeFactory;
     }
   }
 
@@ -103,7 +119,7 @@ public class PeerConnection {
         nativeNewPeerConnection(
             listener,
             mOptions.mRTCConfig,
-            mOptions.mFactory != null ? mOptions.mFactory.getNativePeerConnectionFactory() : 0);
+            mOptions.getNativeFactory());
   }
 
   public void dispose() {

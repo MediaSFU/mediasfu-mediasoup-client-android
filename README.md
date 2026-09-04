@@ -78,7 +78,7 @@ rtc_include_legacy_audio_device=true
 <!-- MEDIASOUP_CLIENT_INSTALLATION:START -->
 ```groovy
 dependencies {
-    implementation 'com.mediasfu:mediasoup-client:1.0.7'
+    implementation 'com.mediasfu:mediasoup-client:1.0.8'
 }
 ```
 <!-- MEDIASOUP_CLIENT_INSTALLATION:END -->
@@ -129,6 +129,20 @@ Device device = new Device();
 String routerRtpCapabilities = // ... from your server
 device.load(routerRtpCapabilities, null);
 ```
+
+To reuse an application-owned WebRTC factory, pass it consistently to `Device.load()` and transport
+creation:
+
+```java
+PeerConnection.Options options = new PeerConnection.Options();
+options.setFactory(peerConnectionFactory);
+device.load(routerRtpCapabilities, options);
+```
+
+The factory must be created from the `org.webrtc` classes supplied transitively by this library and
+must remain alive until all devices and transports using it are disposed. Mixing another WebRTC AAR
+or disposing the factory early is not ABI-safe. Version 1.0.8 validates disposed factories and
+malformed capability offers with Java exceptions rather than allowing opaque native failures.
 
 ### 3. Produce Media
 

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2026-09-04
+
+### Fixed
+
+- Validate caller-provided `PeerConnectionFactory` handles before native use.
+- Reject malformed SDP generated during external-factory capability discovery with descriptive
+  `MediasoupException` errors instead of opaque JSON failures.
+
+### Added
+
+- Document the WebRTC ABI and lifetime requirements for caller-provided factories.
+- Cover `Device.load()` with an externally supplied factory in Android instrumentation tests.
+
 ## [1.0.0] - 2025-12-17
 
 ### 🎉 Initial Release (MediaSFU Fork)
