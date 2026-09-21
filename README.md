@@ -245,12 +245,12 @@ This project is a fork of the excellent work by:
   <tr>
     <td align="center"><a href="https://github.com/MediaSFU/MediaSFU-ReactNative"><img src="https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native"></a></td>
     <td align="center"><a href="https://github.com/MediaSFU/MediaSFU-ReactNative-Expo"><img src="https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo"></a></td>
-    <td align="center"><a href="https://github.com/MediaSFU/MediaSFUKotlin"><img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin"></a></td>
+    <td align="center"><a href="https://github.com/MediaSFU/mediasfu-sdk-kotlin"><img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin"></a></td>
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/MediaSFU/MediaSFU-Angular"><img src="https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white" alt="Angular"></a></td>
     <td align="center"><a href="https://github.com/MediaSFU/MediaSFUVue"><img src="https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D" alt="Vue.js"></a></td>
-    <td align="center"><a href="https://github.com/MediaSFU/MediaSFUReactJS"><img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="ReactJS"></a></td>
+    <td align="center"><a href="https://github.com/MediaSFU/MediaSFU-ReactJS"><img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="ReactJS"></a></td>
   </tr>
 </table>
 
